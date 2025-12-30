@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  lotopy:
+    build: .
+    container_name: lotopy-app
+    ports:
+      - "4201:4201"
+    volumes:
+      # Monta o diretório de dados para persistência
+      - ./data:/app/data
+    environment:
+      - PORT=4201
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4201/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

@@ -1,0 +1,40 @@
+# Ambientes virtuais Python
+.venv
+venv
+env
+ENV
+
+# Cache Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info
+dist
+build
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Procfile (usado para Render, não para Docker)
+Procfile
+
+# README
+README.md
