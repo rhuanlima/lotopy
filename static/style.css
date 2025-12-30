@@ -1,0 +1,440 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+    color: #333;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+}
+
+/* Header */
+header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 30px 40px;
+}
+
+header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 15px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.header-info {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.info-badge {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.95rem;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.btn-atualizar {
+    background: #10b981;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 25px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+}
+
+.btn-atualizar:hover {
+    background: #059669;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+}
+
+/* Alerts */
+.alert {
+    padding: 15px 40px;
+    margin: 0;
+    font-weight: 500;
+}
+
+.alert-success {
+    background: #d1fae5;
+    color: #065f46;
+    border-bottom: 3px solid #10b981;
+}
+
+.alert-error {
+    background: #fee2e2;
+    color: #991b1b;
+    border-bottom: 3px solid #ef4444;
+}
+
+/* Content Layout */
+.content {
+    display: grid;
+    grid-template-columns: 1fr 350px;
+    gap: 30px;
+    padding: 40px;
+}
+
+/* Main Section */
+.main-section h2,
+.sidebar-section h2 {
+    color: #667eea;
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.table-wrapper {
+    background: #f9fafb;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+/* Tabela de Concursos */
+.concursos-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.concursos-table thead {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.concursos-table th {
+    padding: 15px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.concursos-table tbody tr {
+    border-bottom: 1px solid #e5e7eb;
+    transition: all 0.2s ease;
+}
+
+.concursos-table tbody tr:hover {
+    background: #f3f4f6;
+    transform: scale(1.01);
+}
+
+.concursos-table td {
+    padding: 15px;
+    font-size: 0.95rem;
+}
+
+.concurso-num {
+    font-weight: 700;
+    color: #667eea;
+    font-size: 1.1rem;
+}
+
+.numeros-header {
+    min-width: 400px;
+}
+
+.numeros-cell-inline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    max-width: 500px;
+    align-content: flex-start;
+}
+
+.numero-badge {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    min-width: 35px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease;
+    display: inline-block;
+}
+
+.numero-badge:hover {
+    transform: scale(1.1);
+}
+
+.ciclo-cell {
+    text-align: center;
+}
+
+.ciclo-badge {
+    background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+    color: white;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    display: inline-block;
+}
+
+.config-cell {
+    font-weight: 600;
+    color: #4b5563;
+    font-family: 'Courier New', monospace;
+}
+
+/* Tabela de Números */
+.numeros-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.numeros-table thead {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.numeros-table th {
+    padding: 12px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+}
+
+.numeros-table tbody tr {
+    border-bottom: 1px solid #e5e7eb;
+    transition: background 0.2s ease;
+}
+
+.numeros-table tbody tr:hover {
+    background: #f3f4f6;
+}
+
+.numeros-table td {
+    padding: 10px;
+    text-align: center;
+    font-size: 0.9rem;
+}
+
+.numero-badge-small {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-weight: 700;
+    display: inline-block;
+    min-width: 30px;
+}
+
+.freq-col {
+    font-weight: 600;
+    color: #4b5563;
+}
+
+.status-badge {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    display: inline-block;
+}
+
+.status-sim {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.status-nao {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+/* Legenda */
+.legenda {
+    padding: 20px;
+    background: white;
+    border-top: 2px solid #e5e7eb;
+}
+
+.legenda p {
+    margin: 5px 0;
+    font-size: 0.9rem;
+    color: #4b5563;
+}
+
+.legenda strong {
+    color: #667eea;
+}
+
+/* Seção de Sugestões */
+.suggestions-section {
+    padding: 40px;
+    background: #f9fafb;
+}
+
+.suggestions-section h2 {
+    color: #667eea;
+    font-size: 2rem;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.suggestions-subtitle {
+    text-align: center;
+    color: #6b7280;
+    margin-bottom: 30px;
+    font-size: 1.1rem;
+}
+
+.suggestions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 25px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.suggestion-card {
+    background: white;
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    border-top: 4px solid transparent;
+}
+
+.suggestion-card:nth-child(1) {
+    border-top-color: #ef4444;
+}
+
+.suggestion-card:nth-child(2) {
+    border-top-color: #f59e0b;
+}
+
+.suggestion-card:nth-child(3) {
+    border-top-color: #10b981;
+}
+
+.suggestion-card:nth-child(4) {
+    border-top-color: #3b82f6;
+}
+
+.suggestion-card:nth-child(5) {
+    border-top-color: #8b5cf6;
+}
+
+.suggestion-card:nth-child(6) {
+    border-top-color: #ec4899;
+}
+
+.suggestion-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.suggestion-header h3 {
+    color: #1f2937;
+    font-size: 1.2rem;
+    margin-bottom: 8px;
+}
+
+.suggestion-desc {
+    color: #6b7280;
+    font-size: 0.9rem;
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+.suggestion-numbers {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+}
+
+.numero-badge-suggestion {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 1rem;
+    min-width: 40px;
+    text-align: center;
+    box-shadow: 0 3px 8px rgba(102, 126, 234, 0.3);
+    transition: all 0.2s ease;
+}
+
+.numero-badge-suggestion:hover {
+    transform: scale(1.15);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.5);
+}
+
+/* Footer */
+footer {
+    background: #f9fafb;
+    padding: 20px 40px;
+    text-align: center;
+    color: #6b7280;
+    font-size: 0.9rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .content {
+        grid-template-columns: 1fr;
+    }
+
+    .sidebar-section {
+        order: -1;
+    }
+}
+
+@media (max-width: 768px) {
+    header h1 {
+        font-size: 1.8rem;
+    }
+
+    .content {
+        padding: 20px;
+    }
+
+    .concursos-table {
+        font-size: 0.85rem;
+    }
+
+    .concursos-table th,
+    .concursos-table td {
+        padding: 10px 8px;
+    }
+
+    .numero-badge {
+        padding: 4px 8px;
+        font-size: 0.8rem;
+        min-width: 30px;
+    }
+}

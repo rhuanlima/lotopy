@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lotofácil - Análise de Concursos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>🎰 Lotofácil - Análise de Concursos</h1>
+            <div class="header-info">
+                <span class="info-badge">Total de Concursos: {{ total_concursos }}</span>
+                <span class="info-badge">Ciclo Atual: {{ ciclo_atual }}</span>
+                <a href="{{ url_for('atualizar_banco') }}" class="btn-atualizar">🔄 Atualizar Banco de Dados</a>
+            </div>
+        </header>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <div class="content">
+            <!-- Tabela Principal: Últimos 15 Concursos -->
+            <div class="main-section">
+                <h2>📊 Últimos 15 Concursos</h2>
+                <div class="table-wrapper">
+                    <table class="concursos-table">
+                        <thead>
+                            <tr>
+                                <th>Concurso</th>
+                                <th>Data</th>
+                                <th class="numeros-header">Números Sorteados</th>
+                                <th>Ciclo</th>
+                                <th>Config P-I-NP</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for concurso in concursos %}
+                            <tr>
+                                <td class="concurso-num">{{ concurso.concurso }}</td>
+                                <td>{{ concurso.data }}</td>
+                                <td class="numeros-cell-inline">
+                                    {% for numero in concurso.numeros %}
+                                    <span class="numero-badge">{{ numero }}</span>
+                                    {% endfor %}
+                                </td>
+                                <td class="ciclo-cell">
+                                    <span class="ciclo-badge">{{ concurso.ciclo }}</span>
+                                </td>
+                                <td class="config-cell">{{ concurso.config_pip }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tabela Lateral: Status dos 25 Números -->
+            <div class="sidebar-section">
+                <h2>🔢 Status dos Números</h2>
+                <div class="table-wrapper">
+                    <table class="numeros-table">
+                        <thead>
+                            <tr>
+                                <th>Nº</th>
+                                <th>Freq.</th>
+                                <th>Ciclo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for num_info in numeros_info %}
+                            <tr>
+                                <td class="numero-col">
+                                    <span class="numero-badge-small">{{ num_info.numero }}</span>
+                                </td>
+                                <td class="freq-col">{{ num_info.frequencia }}</td>
+                                <td class="status-col">
+                                    {% if num_info.no_ciclo %}
+                                    <span class="status-badge status-sim">✓</span>
+                                    {% else %}
+                                    <span class="status-badge status-nao">✗</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="legenda">
+                    <p><strong>Legenda:</strong></p>
+                    <p><span class="status-badge status-sim">✓</span> Sorteado no ciclo atual</p>
+                    <p><span class="status-badge status-nao">✗</span> Não sorteado no ciclo atual</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seção de Sugestões de Jogos -->
+        <div class="suggestions-section">
+            <h2>🎲 Sugestões de Jogos</h2>
+            <p class="suggestions-subtitle">6 estratégias diferentes baseadas em análises estatísticas</p>
+            <div class="suggestions-grid">
+                {% for sugestao in sugestoes %}
+                <div class="suggestion-card">
+                    <div class="suggestion-header">
+                        <h3>{{ sugestao.estrategia }}</h3>
+                        <p class="suggestion-desc">{{ sugestao.descricao }}</p>
+                    </div>
+                    <div class="suggestion-numbers">
+                        {% for numero in sugestao.numeros %}
+                        <span class="numero-badge-suggestion">{{ numero }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <footer>
+            <p>Desenvolvido para análise da Lotofácil | Dados atualizados em tempo real</p>
+        </footer>
+    </div>
+</body>
+
+</html>

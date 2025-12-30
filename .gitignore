@@ -1,4 +1,28 @@
-/.venv
-/apoio.txt
-/base_dados.xlsx
-/data
+# Virtual Environment
+.venv/
+venv/
+ENV/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Data files
+apoio.txt
+base_dados.xlsx
+data/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
