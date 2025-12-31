@@ -7,9 +7,11 @@ import source.pip_config as pip
 import source.number_frequency as nf
 import source.game_suggestions as gs
 import os
+import secrets
 
 app = Flask(__name__)
-app.secret_key = 'lotofacil_secret_key_2024'  # Necessário para flash messages
+# Use variável de ambiente para secret_key
+app.secret_key = os.environ.get("SECRET_KEY", secrets.token_hex(32))
 
 
 def load_data():
@@ -132,17 +134,17 @@ def api_suggestions():
     """
     try:
         from flask import jsonify
-        
+
         # Carregar dados
         df = load_data()
-        
+
         # Gerar sugestões
         sugestoes = gs.generate_suggestions(df, num_games=6)
-        
+
         # Informações adicionais
         total_concursos = len(df)
         ciclo_atual = int(df['ciclo'].max())
-        
+
         # Preparar resposta
         response = {
             'success': True,
@@ -150,9 +152,9 @@ def api_suggestions():
             'ciclo_atual': ciclo_atual,
             'sugestoes': sugestoes
         }
-        
+
         return jsonify(response)
-    
+
     except Exception as e:
         from flask import jsonify
         return jsonify({
@@ -161,7 +163,15 @@ def api_suggestions():
         }), 500
 
 
-if __name__ == '__main__':
-    # Pega a porta do ambiente (padrão 5000 se local)
+if __name__ == "__main__":
+    # Configurações de segurança
     port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port)
+
+    # Em produção, usar 0.0.0.0 apenas dentro do container
+    # O Docker/proxy reverso controla a exposição externa
+    host = "0.0.0.0"
+
+    # Desabilitar debug em produção
+    debug = os.environ.get("FLASK_ENV") == "development"
+
+    app.run(host=host, port=port, debug=debug)

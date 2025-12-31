@@ -5,15 +5,19 @@ services:
     build: .
     container_name: lotopy-app
     ports:
-      - "4201:4201"
+      - "127.0.0.1:4201:4201"
     volumes:
       # Monta o diretório de dados para persistência
       - ./data:/app/data
     environment:
       - PORT=4201
+      - SECRET_KEY=${SECRET_KEY}
+      - FLASK_ENV=production
+    env_file:
+      - .env
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4201/"]
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://192.168.15.144:4201/')"]
       interval: 30s
       timeout: 10s
       retries: 3
