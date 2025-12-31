@@ -215,7 +215,200 @@ def generate_combined_analysis(df):
     return sorted(jogo)
 
 
-def generate_suggestions(df, num_games=6):
+def generate_heat_map_based(df):
+    """
+    Gera um jogo baseado no mapa de calor - prioriza áreas quentes da cartela.
+    
+    Args:
+        df: DataFrame com os concursos
+        
+    Returns:
+        list: Lista com 15 números das áreas mais quentes
+    """
+    import source.global_statistics as gstats
+    
+    heat_map_data = gstats.calculate_heat_map(df)
+    
+    # Ordenar por intensidade (frequência) e pegar top 15
+    heat_map_sorted = sorted(heat_map_data['heat_map'], key=lambda x: x['intensidade'], reverse=True)
+    jogo = [item['numero'] for item in heat_map_sorted[:15]]
+    
+    return sorted(jogo)
+
+
+def generate_geographic_balanced(df):
+    """
+    Gera um jogo balanceado geograficamente - equilibra moldura/miolo e linhas.
+    
+    Args:
+        df: DataFrame com os concursos
+        
+    Returns:
+        list: Lista com 15 números balanceados geograficamente
+    """
+    import source.global_statistics as gstats
+    import source.geographic_analysis as ga
+    
+    # Pegar estatísticas consolidadas
+    geo_stats = gstats.calculate_consolidated_geographic_analysis(df)
+    
+    # Média ideal: ~9 moldura, ~6 miolo
+    # Distribuição ideal por linhas baseada nas médias
+    target_moldura = 9
+    target_miolo = 6
+    
+    # Pegar números mais frequentes
+    frequentes = get_most_frequent_numbers(df, 25)
+    
+    # Separar por moldura e miolo
+    moldura_nums = [n for n in frequentes if ga.is_moldura(n)]
+    miolo_nums = [n for n in frequentes if ga.is_miolo(n)]
+    
+    # Montar jogo balanceado
+    jogo = moldura_nums[:target_moldura] + miolo_nums[:target_miolo]
+    
+    # Se não temos 15, completar com os mais frequentes
+    if len(jogo) < 15:
+        for n in frequentes:
+            if n not in jogo:
+                jogo.append(n)
+            if len(jogo) == 15:
+                break
+    
+    return sorted(jogo[:15])
+
+
+    return sorted(jogo[:15])
+
+
+def generate_quadrant_based(df):
+    """
+    Gera um jogo priorizando os quadrantes mais quentes.
+    
+    Args:
+        df: DataFrame com os concursos
+        
+    Returns:
+        list: Lista com 15 números dos quadrantes mais frequentes
+    """
+    import source.global_statistics as gstats
+    import source.geographic_analysis as ga
+    
+    heat_map_data = gstats.calculate_heat_map(df)
+    quadrantes = heat_map_data['quadrantes']
+    
+    # Ordenar quadrantes por percentual
+    q_sorted = sorted([
+        ('quadrante1', quadrantes['quadrante1']),
+        ('quadrante2', quadrantes['quadrante2']),
+        ('quadrante3', quadrantes['quadrante3']),
+        ('quadrante4', quadrantes['quadrante4']),
+        ('cruz', quadrantes['cruz'])
+    ], key=lambda x: x[1]['percentual'], reverse=True)
+    
+    # Pegar números mais frequentes de cada região
+    frequentes = get_most_frequent_numbers(df, 25)
+    jogo = []
+    
+    # Distribuir números pelos quadrantes mais quentes
+    for q_name, q_data in q_sorted:
+        q_nums = [n for n in frequentes if n in q_data['numeros'] and n not in jogo]
+        # Pegar proporcionalmente ao percentual
+        qtd = max(1, int(15 * q_data['percentual'] / 100))
+        jogo.extend(q_nums[:qtd])
+        if len(jogo) >= 15:
+            break
+    
+    # Completar se necessário
+    if len(jogo) < 15:
+        for n in frequentes:
+            if n not in jogo:
+                jogo.append(n)
+            if len(jogo) == 15:
+                break
+    
+    return sorted(jogo[:15])
+
+
+def generate_moldura_priority(df):
+    """
+    Gera um jogo priorizando a moldura (bordas da cartela).
+    
+    Args:
+        df: DataFrame com os concursos
+        
+    Returns:
+        list: Lista com 15 números priorizando moldura
+    """
+    import source.global_statistics as gstats
+    import source.geographic_analysis as ga
+    
+    # Pegar estatísticas
+    geo_stats = gstats.calculate_consolidated_geographic_analysis(df)
+    frequentes = get_most_frequent_numbers(df, 25)
+    
+    # Separar moldura e miolo
+    moldura_nums = [n for n in frequentes if ga.is_moldura(n)]
+    miolo_nums = [n for n in frequentes if ga.is_miolo(n)]
+    
+    # Usar média histórica como referência (aproximadamente 9 moldura, 6 miolo)
+    target_moldura = int(geo_stats['moldura']['media_por_jogo'])
+    target_miolo = 15 - target_moldura
+    
+    jogo = moldura_nums[:target_moldura] + miolo_nums[:target_miolo]
+    
+    # Completar se necessário
+    if len(jogo) < 15:
+        for n in frequentes:
+            if n not in jogo:
+                jogo.append(n)
+            if len(jogo) == 15:
+                break
+    
+    return sorted(jogo[:15])
+
+
+def generate_line_balanced(df):
+    """
+    Gera um jogo balanceado por linhas (L1-L5).
+    
+    Args:
+        df: DataFrame com os concursos
+        
+    Returns:
+        list: Lista com 15 números balanceados por linhas
+    """
+    import source.global_statistics as gstats
+    import source.geographic_analysis as ga
+    
+    # Pegar estatísticas de linhas
+    geo_stats = gstats.calculate_consolidated_geographic_analysis(df)
+    frequentes = get_most_frequent_numbers(df, 25)
+    
+    # Distribuir por linhas baseado nas médias
+    jogo = []
+    for linha_data in geo_stats['linhas']:
+        linha_num = linha_data['linha']
+        target_qtd = int(linha_data['media_por_jogo'])
+        
+        # Pegar números dessa linha
+        linha_range = range((linha_num-1)*5 + 1, linha_num*5 + 1)
+        linha_nums = [n for n in frequentes if n in linha_range and n not in jogo]
+        
+        jogo.extend(linha_nums[:target_qtd])
+    
+    # Completar se necessário
+    if len(jogo) < 15:
+        for n in frequentes:
+            if n not in jogo:
+                jogo.append(n)
+            if len(jogo) == 15:
+                break
+    
+    return sorted(jogo[:15])
+
+
+def generate_suggestions(df, num_games=9):
     """
     Gera sugestões de jogos com diferentes estratégias.
     
@@ -228,9 +421,9 @@ def generate_suggestions(df, num_games=6):
     """
     sugestoes = [
         {
-            'estrategia': '🔥 Números Mais Frequentes',
-            'descricao': 'Baseado nos números que mais saíram historicamente',
-            'numeros': get_most_frequent_numbers(df, 15)
+            'estrategia': '🔥 Áreas Mais Quentes',
+            'descricao': 'Baseado no mapa de calor - números das posições mais frequentes',
+            'numeros': generate_heat_map_based(df)
         },
         {
             'estrategia': '🎯 Faltantes no Ciclo',
@@ -238,19 +431,34 @@ def generate_suggestions(df, num_games=6):
             'numeros': generate_cycle_priority(df)
         },
         {
-            'estrategia': '⚖️ Estratégia Balanceada',
-            'descricao': 'Mix equilibrado de pares, ímpares e primos',
+            'estrategia': '🗺️ Equilíbrio Geográfico',
+            'descricao': 'Balanceia moldura/miolo baseado em padrões históricos',
+            'numeros': generate_geographic_balanced(df)
+        },
+        {
+            'estrategia': '🎲 Quadrantes Quentes',
+            'descricao': 'Prioriza números dos quadrantes mais frequentes',
+            'numeros': generate_quadrant_based(df)
+        },
+        {
+            'estrategia': '🔲 Foco na Moldura',
+            'descricao': 'Prioriza números nas bordas da cartela',
+            'numeros': generate_moldura_priority(df)
+        },
+        {
+            'estrategia': '📊 Equilíbrio por Linhas',
+            'descricao': 'Distribui números balanceadamente pelas 5 linhas',
+            'numeros': generate_line_balanced(df)
+        },
+        {
+            'estrategia': '⚖️ Pares-Ímpares-Primos',
+            'descricao': 'Mix equilibrado seguindo configurações mais comuns',
             'numeros': generate_balanced_game(df)
         },
         {
-            'estrategia': '🔥 Números Quentes',
+            'estrategia': '🔥 Números Quentes Recentes',
             'descricao': 'Números mais frequentes nos últimos 30 concursos',
             'numeros': generate_recent_hot(df)
-        },
-        {
-            'estrategia': '🎲 Mix Inteligente',
-            'descricao': 'Combina números frequentes com faltantes no ciclo',
-            'numeros': generate_mixed_strategy(df)
         },
         {
             'estrategia': '🧠 Análise Combinada',

@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lotofácil - Análise de Concursos</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="{{ url_for('static', filename='script.js') }}" defer></script>
 </head>
 
 <body>
@@ -19,6 +20,14 @@
             </div>
         </header>
 
+        <!-- Barra de Navegação Fixa -->
+        <nav class="sticky-nav">
+            <a href="#concursos" class="nav-link">📊 Concursos</a>
+            <a href="#analise" class="nav-link">📈 Análise</a>
+            <a href="#mapa-calor" class="nav-link">🔥 Mapa de Calor</a>
+            <a href="#sugestoes" class="nav-link">🎲 Sugestões</a>
+        </nav>
+
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
         {% for category, message in messages %}
@@ -29,85 +38,298 @@
         {% endif %}
         {% endwith %}
 
-        <div class="content">
-            <!-- Tabela Principal: Últimos 15 Concursos -->
-            <div class="main-section">
-                <h2>📊 Últimos 15 Concursos</h2>
-                <div class="table-wrapper">
-                    <table class="concursos-table">
-                        <thead>
-                            <tr>
-                                <th>Concurso</th>
-                                <th>Data</th>
-                                <th class="numeros-header">Números Sorteados</th>
-                                <th>Ciclo</th>
-                                <th>Config P-I-NP</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for concurso in concursos %}
-                            <tr>
-                                <td class="concurso-num">{{ concurso.concurso }}</td>
-                                <td>{{ concurso.data }}</td>
-                                <td class="numeros-cell-inline">
-                                    {% for numero in concurso.numeros %}
-                                    <span class="numero-badge">{{ numero }}</span>
-                                    {% endfor %}
-                                </td>
-                                <td class="ciclo-cell">
-                                    <span class="ciclo-badge">{{ concurso.ciclo }}</span>
-                                </td>
-                                <td class="config-cell">{{ concurso.config_pip }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+        <!-- Seção 1: Últimos Concursos em Cards -->
+        <div id="concursos" class="concursos-section">
+            <div class="section-header">
+                <h2>📊 Últimos Concursos</h2>
+                <div class="limit-selector-wrapper">
+                    <label for="limit-selector">Exibir:</label>
+                    <select id="limit-selector" onchange="updateLimit()">
+                        <option value="5">5 jogos</option>
+                        <option value="10">10 jogos</option>
+                        <option value="15" {% if limit==15 %}selected{% endif %}>15 jogos</option>
+                        <option value="20">20 jogos</option>
+                        <option value="25">25 jogos</option>
+                    </select>
                 </div>
             </div>
 
-            <!-- Tabela Lateral: Status dos 25 Números -->
-            <div class="sidebar-section">
-                <h2>🔢 Status dos Números</h2>
-                <div class="table-wrapper">
-                    <table class="numeros-table">
-                        <thead>
-                            <tr>
-                                <th>Nº</th>
-                                <th>Freq.</th>
-                                <th>Ciclo</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for num_info in numeros_info %}
-                            <tr>
-                                <td class="numero-col">
-                                    <span class="numero-badge-small">{{ num_info.numero }}</span>
-                                </td>
-                                <td class="freq-col">{{ num_info.frequencia }}</td>
-                                <td class="status-col">
-                                    {% if num_info.no_ciclo %}
-                                    <span class="status-badge status-sim">✓</span>
-                                    {% else %}
-                                    <span class="status-badge status-nao">✗</span>
-                                    {% endif %}
-                                </td>
-                            </tr>
+            <div class="concursos-grid">
+                {% for concurso in concursos %}
+                <div class="concurso-card">
+                    <div class="concurso-card-header">
+                        <h3>Concurso {{ concurso.concurso }}</h3>
+                        <span class="concurso-date">{{ concurso.data }}</span>
+                    </div>
+
+                    <!-- Grade 5x5 -->
+                    <div class="concurso-cartela">
+                        <div class="cartela-grid">
+                            {% for i in range(1, 26) %}
+                            <div class="cartela-cell {% if i in concurso.numeros %}selected{% endif %}">
+                                {{ i }}
+                            </div>
                             {% endfor %}
-                        </tbody>
-                    </table>
+                        </div>
+                    </div>
+
+                    <!-- Números em lista -->
+                    <div class="concurso-numbers">
+                        {% for numero in concurso.numeros %}
+                        <span class="numero-badge-small">{{ numero }}</span>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Estatísticas -->
+                    <div class="concurso-stats">
+                        <div class="stat-row">
+                            <span class="stat-label">🔄 Ciclo:</span>
+                            <span class="stat-value ciclo-badge">{{ concurso.ciclo }}</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">⚖️ P-I-NP:</span>
+                            <span class="stat-value">{{ concurso.config_pip }}</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">🔲 Moldura:</span>
+                            <span class="stat-value">{{ concurso.moldura }}</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">⬛ Miolo:</span>
+                            <span class="stat-value">{{ concurso.miolo }}</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">📊 Linhas:</span>
+                            <span class="stat-value">{{ concurso.distribuicao_linhas }}</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">◰ Q1:</span>
+                            <span class="stat-value">{{ concurso.q1 }}</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">◳ Q2:</span>
+                            <span class="stat-value">{{ concurso.q2 }}</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">✟ Cruz:</span>
+                            <span class="stat-value">{{ concurso.cruz }}</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">◱ Q3:</span>
+                            <span class="stat-value">{{ concurso.q3 }}</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">◲ Q4:</span>
+                            <span class="stat-value">{{ concurso.q4 }}</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="legenda">
-                    <p><strong>Legenda:</strong></p>
-                    <p><span class="status-badge status-sim">✓</span> Sorteado no ciclo atual</p>
-                    <p><span class="status-badge status-nao">✗</span> Não sorteado no ciclo atual</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Seção 2: Análise Estatística -->
+        <div id="analise" class="analysis-section">
+            <h2>📈 Análise Estatística</h2>
+
+            <div class="analysis-grid">
+                <!-- Status dos 25 Números -->
+                <div class="analysis-card">
+                    <h3>🔢 Status dos Números</h3>
+                    <div class="table-wrapper">
+                        <table class="numeros-table">
+                            <thead>
+                                <tr>
+                                    <th>Nº</th>
+                                    <th>Freq.</th>
+                                    <th>%</th>
+                                    <th>Ciclo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for num_info in numeros_info %}
+                                <tr>
+                                    <td class="numero-col">
+                                        <span class="numero-badge-small">{{ num_info.numero }}</span>
+                                    </td>
+                                    <td class="freq-col">{{ num_info.frequencia }}</td>
+                                    <td class="percent-col">{{ num_info.percentual }}%</td>
+                                    <td class="status-col">
+                                        {% if num_info.no_ciclo %}
+                                        <span class="status-badge status-sim">✓</span>
+                                        {% else %}
+                                        <span class="status-badge status-nao">✗</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Análise Geográfica Consolidada -->
+                <div class="analysis-card">
+                    <h3>🗺️ Análise Geográfica</h3>
+
+                    <!-- Diagramas Explicativos -->
+                    <h4 class="subsection-title">Guia Visual</h4>
+                    <div class="diagrams-container">
+                        <div class="diagram-item">
+                            <img src="/static/moldura_miolo_diagram.png" alt="Diagrama Moldura vs Miolo"
+                                class="diagram-image">
+                            <p class="diagram-caption">Moldura (bordas) vs Miolo (centro)</p>
+                        </div>
+                        <div class="diagram-item">
+                            <img src="/static/quadrantes_cruz_diagram.png" alt="Diagrama Quadrantes e Cruz"
+                                class="diagram-image">
+                            <p class="diagram-caption">Quadrantes (Q1-Q4) e Cruz (✟)</p>
+                        </div>
+                    </div>
+
+                    <!-- Linhas -->
+                    <h4 class="subsection-title">Distribuição por Linhas</h4>
+                    <div class="table-wrapper">
+                        <table class="stats-table">
+                            <thead>
+                                <tr>
+                                    <th>Linha</th>
+                                    <th>Total</th>
+                                    <th>%</th>
+                                    <th>Média</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for linha in consolidated_geo.linhas %}
+                                <tr>
+                                    <td>L{{ linha.linha }} ({{ linha.range }})</td>
+                                    <td>{{ linha.total }}</td>
+                                    <td>{{ linha.percentual }}%</td>
+                                    <td>{{ linha.media_por_jogo }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Padrões Mais Comuns -->
+                    <div class="top-distributions">
+                        <h4>Padrões Mais Comuns:</h4>
+                        {% for dist, count in consolidated_geo.distribuicoes_linhas_comuns %}
+                        <div class="dist-item">
+                            <span class="dist-pattern">{{ dist }}</span>
+                            <span class="dist-count">{{ count }}x</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Moldura/Miolo -->
+                    <h4 class="subsection-title">Moldura vs Miolo</h4>
+                    <div class="table-wrapper">
+                        <table class="stats-table">
+                            <thead>
+                                <tr>
+                                    <th>Região</th>
+                                    <th>Total</th>
+                                    <th>%</th>
+                                    <th>Média</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Moldura</td>
+                                    <td>{{ consolidated_geo.moldura.total }}</td>
+                                    <td>{{ consolidated_geo.moldura.percentual }}%</td>
+                                    <td>{{ consolidated_geo.moldura.media_por_jogo }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Miolo</td>
+                                    <td>{{ consolidated_geo.miolo.total }}</td>
+                                    <td>{{ consolidated_geo.miolo.percentual }}%</td>
+                                    <td>{{ consolidated_geo.miolo.media_por_jogo }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Análise de Quadrantes e Cruz -->
+                    <h4 class="subsection-title">Quadrantes e Cruz</h4>
+                    <div class="quadrantes-compact">
+                        <div class="quadrante-mini">
+                            <strong>Q1:</strong> {{ heat_map.quadrantes.quadrante1.percentual }}%
+                        </div>
+                        <div class="quadrante-mini">
+                            <strong>Q2:</strong> {{ heat_map.quadrantes.quadrante2.percentual }}%
+                        </div>
+                        <div class="quadrante-mini cruz-mini">
+                            <strong>✟:</strong> {{ heat_map.quadrantes.cruz.percentual }}%
+                        </div>
+                        <div class="quadrante-mini">
+                            <strong>Q3:</strong> {{ heat_map.quadrantes.quadrante3.percentual }}%
+                        </div>
+                        <div class="quadrante-mini">
+                            <strong>Q4:</strong> {{ heat_map.quadrantes.quadrante4.percentual }}%
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Análise P-I-NP -->
+                <div class="analysis-card">
+                    <h3>⚖️ Pares-Ímpares-Primos</h3>
+                    <div class="table-wrapper">
+                        <table class="stats-table">
+                            <thead>
+                                <tr>
+                                    <th>Configuração</th>
+                                    <th>Frequência</th>
+                                    <th>%</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in global_pip_dist.distribuicao[:10] %}
+                                <tr>
+                                    <td class="config-cell">{{ item.config }}</td>
+                                    <td>{{ item.frequencia }}</td>
+                                    <td>{{ item.percentual }}%</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Seção de Sugestões de Jogos -->
-        <div class="suggestions-section">
+        <!-- Seção 3: Mapa de Calor -->
+        <div id="mapa-calor" class="heatmap-section">
+            <h2>🔥 Mapa de Calor</h2>
+            <p class="section-subtitle">Visualização da frequência de cada número na cartela</p>
+
+            <div class="heatmap-container">
+                <!-- Mapa de Calor 5x5 -->
+                <div class="heatmap-grid">
+                    {% for item in heat_map.heat_map %}
+                    <div class="heatmap-cell" style="background: linear-gradient(135deg, 
+                        rgba(239, 68, 68, {{ item.intensidade / 100 }}) 0%, 
+                        rgba(220, 38, 38, {{ item.intensidade / 100 }}) 100%);">
+                        <span class="heatmap-number">{{ item.numero }}</span>
+                        <span class="heatmap-freq">{{ item.frequencia }}</span>
+                        <span class="heatmap-percent">{{ item.percentual }}%</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="heatmap-legend">
+                    <span>Menos Frequente ({{ heat_map.min_freq }})</span>
+                    <div class="legend-gradient"></div>
+                    <span>Mais Frequente ({{ heat_map.max_freq }})</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seção 4: Sugestões de Jogos -->
+        <div id="sugestoes" class="suggestions-section">
             <h2>🎲 Sugestões de Jogos</h2>
-            <p class="suggestions-subtitle">6 estratégias diferentes baseadas em análises estatísticas</p>
+            <p class="suggestions-subtitle">9 estratégias diferentes baseadas em análises estatísticas</p>
             <div class="suggestions-grid">
                 {% for sugestao in sugestoes %}
                 <div class="suggestion-card">
@@ -115,20 +337,86 @@
                         <h3>{{ sugestao.estrategia }}</h3>
                         <p class="suggestion-desc">{{ sugestao.descricao }}</p>
                     </div>
+
+                    <!-- Grade 5x5 -->
+                    <div class="suggestion-cartela">
+                        <div class="cartela-grid">
+                            {% for i in range(1, 26) %}
+                            <div class="cartela-cell {% if i in sugestao.numeros %}selected{% endif %}">
+                                {{ i }}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Números em lista -->
                     <div class="suggestion-numbers">
                         {% for numero in sugestao.numeros %}
-                        <span class="numero-badge-suggestion">{{ numero }}</span>
+                        <span class="numero-badge-small">{{ numero }}</span>
                         {% endfor %}
+                    </div>
+
+                    <!-- Estatísticas -->
+                    <div class="concurso-stats">
+                        <div class="stat-row">
+                            <span class="stat-label">🔄 Ciclo:</span>
+                            <span class="stat-value">{{ sugestao.ciclo_count }}/15</span>
+                        </div>
+
+                        <div class="stat-row">
+                            <span class="stat-label">⚖️ P-I-NP:</span>
+                            <span class="stat-value">{{ sugestao.config_pip }}</span>
+                        </div>
+
+                        <div class="stat-row">
+                            <span class="stat-label">🔲 Moldura:</span>
+                            <span class="stat-value">{{ sugestao.moldura }}</span>
+                        </div>
+
+                        <div class="stat-row">
+                            <span class="stat-label">⬛ Miolo:</span>
+                            <span class="stat-value">{{ sugestao.miolo }}</span>
+                        </div>
+
+                        <div class="stat-row">
+                            <span class="stat-label">📊 Linhas:</span>
+                            <span class="stat-value">{{ sugestao.distribuicao_linhas }}</span>
+                        </div>
+
+                        <div class="stat-row">
+                            <span class="stat-label">◰ Q1:</span>
+                            <span class="stat-value">{{ sugestao.q1 }}</span>
+                        </div>
+
+                        <div class="stat-row">
+                            <span class="stat-label">◳ Q2:</span>
+                            <span class="stat-value">{{ sugestao.q2 }}</span>
+                        </div>
+
+                        <div class="stat-row">
+                            <span class="stat-label">✟ Cruz:</span>
+                            <span class="stat-value">{{ sugestao.cruz }}</span>
+                        </div>
+
+                        <div class="stat-row">
+                            <span class="stat-label">◱ Q3:</span>
+                            <span class="stat-value">{{ sugestao.q3 }}</span>
+                        </div>
+
+                        <div class="stat-row">
+                            <span class="stat-label">◲ Q4:</span>
+                            <span class="stat-value">{{ sugestao.q4 }}</span>
+                        </div>
                     </div>
                 </div>
                 {% endfor %}
             </div>
         </div>
-
-        <footer>
-            <p>Desenvolvido para análise da Lotofácil | Dados atualizados em tempo real</p>
-        </footer>
     </div>
+
+    <footer>
+        <p>Desenvolvido para análise da Lotofácil | Dados atualizados em tempo real</p>
+    </footer>
 </body>
 
 </html>
