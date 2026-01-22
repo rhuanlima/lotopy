@@ -2,6 +2,9 @@ import pandas as pd
 import random
 from collections import Counter
 
+import source.cycle_analysis as ca
+import source.cycle_calculator as cc
+
 
 def get_most_frequent_numbers(df, n=15):
     """
@@ -407,10 +410,175 @@ def generate_line_balanced(df):
     
     return sorted(jogo[:15])
 
+def generate_smart_cycle_strategy(df):
+    """
+    Gera um jogo baseado na análise inteligente do ciclo atual.
+    Verifica o passo do ciclo e a quantidade provável de números novos.
+    
+    Args:
+        df: DataFrame com os concursos
+        
+    Returns:
+        list: Lista com 15 números
+    """
+    if "ciclo" not in df.columns:
+        df = cc.calculate_cycle(df)
+        
+    # Identificar estado atual do ciclo
+    faltantes = get_missing_in_cycle(df)
+    qtd_faltantes = len(faltantes)
+    
+    # Se ciclo fechou, inicia novo ciclo (aposta conservadora)
+    if qtd_faltantes == 0:
+        # Se acabou de fechar, o próximo sorteio é o 1º do próximo ciclo
+        # Estratégia: 9 repetidos do último sorteio + 6 ausentes do último sorteio
+        # Simulação conservadora
+        return generate_recent_hot(df)
+        
+    # Calcular passo atual (quantos sorteios já ocorreram neste ciclo) + 1 (próximo)
+    ultimo_ciclo = df["ciclo"].max()
+    passo_atual = len(df[df["ciclo"] == ultimo_ciclo]) + 1
+    
+    # Consultar distribuição de probabilidade para este passo
+    dist_stats = ca.analyze_new_numbers_distribution(df)
+    
+    qtd_novos_sugerida = 0
+    
+    if passo_atual in dist_stats:
+        # Pegar a quantidade de novos mais frequente para este passo
+        # Se houver empate ou múltiplas altas, pega a maior probabilidade
+        df_prob = dist_stats[passo_atual]
+        if not df_prob.empty:
+            qtd_novos_sugerida = int(df_prob.iloc[0]["Qtd_Novos"])
+    
+    # Se não temos estatística para este passo (ex: passo muito avançado), usamos heurística
+    if qtd_novos_sugerida == 0:
+        # Se faltam poucos, tenta fechar ou pegar a maioria
+        qtd_novos_sugerida = min(qtd_faltantes, 2 if qtd_faltantes > 2 else qtd_faltantes)
+        
+    # Ajustar se a sugestão for maior que os faltantes disponíveis (impossível)
+    qtd_novos_sugerida = min(qtd_novos_sugerida, qtd_faltantes)
+    
+    # Selecionar os 'novos' (que são os faltantes do ciclo)
+    # Priorizar os mais frequentes globalmente dentre os faltantes
+    frequentes = get_most_frequent_numbers(df, 25)
+    
+    # Ordenar faltantes por frequência global
+    faltantes_ordenados = sorted(faltantes, key=lambda x: frequentes.index(x) if x in frequentes else 99)
+    
+    numeros_selecionados = faltantes_ordenados[:qtd_novos_sugerida]
+    
+    # Completar com números JÁ sorteados no ciclo (repetidos do ciclo)
+    # Para completar 15 números
+    qtd_restante = 15 - len(numeros_selecionados)
+    
+    # Pegar números já sorteados no ciclo
+    numeros_no_ciclo = list(set(range(1, 26)) - set(faltantes))
+    
+    # Dentre os já sorteados, preferir os que costumam se repetir (quentes recentes)
+    quentes = get_hot_numbers(df, last_n=20, top=25)
+    
+    # Ordenar por "quentura" recente
+    repetidos_ordenados = sorted(numeros_no_ciclo, key=lambda x: quentes.index(x) if x in quentes else 99)
+    
+    numeros_selecionados.extend(repetidos_ordenados[:qtd_restante])
+    
+    return sorted(numeros_selecionados[:15])
+
+
+
+
+def generate_cycle_next_step_strategy(df):
+    """
+    Gera um jogo baseado na frequência dos números na PRÓXIMA rodada do ciclo.
+    
+    Args:
+        df: DataFrame com os concursos
+        
+    Returns:
+        list: Lista com 15 números
+    """
+    if "ciclo" not in df.columns:
+        df = cc.calculate_cycle(df)
+        
+    # Identificar estado atual do ciclo
+    faltantes = get_missing_in_cycle(df)
+    qtd_faltantes = len(faltantes)
+    
+    # Se ciclo fechou, inicia novo (conservador)
+    if qtd_faltantes == 0:
+        return generate_recent_hot(df)
+        
+    # Calcular próximo passo (rodada)
+    ultimo_ciclo = df["ciclo"].max()
+    passo_atual = len(df[df["ciclo"] == ultimo_ciclo])
+    proximo_passo = passo_atual + 1
+    
+    # Obter frequências para o PRÓXIMO passo
+    # Analisamos até o passo 10 para garantir cobertura
+    freq_data = ca.analyze_frequency_by_cycle_step(df, max_steps=15)
+    
+    # Se temos dados para o próximo passo
+    prioridade_faltantes = []
+    if proximo_passo in freq_data:
+        df_freq = freq_data[proximo_passo]
+        
+        # Filtrar apenas os números que estão FALTANDO no ciclo atual
+        # Queremos saber: "Dos que faltam, quais costumam sair NESTA rodada?"
+        df_freq_missing = df_freq[df_freq['Numero'].isin(faltantes)]
+        
+        if not df_freq_missing.empty:
+            # Ordenar por frequência
+            prioridade_faltantes = df_freq_missing['Numero'].tolist()
+    
+    # Se não temos dados ou lista vazia, usar hot numbers globais para os faltantes
+    if not prioridade_faltantes:
+        frequentes = get_most_frequent_numbers(df, 25)
+        prioridade_faltantes = sorted(faltantes, key=lambda x: frequentes.index(x) if x in frequentes else 99)
+    else:
+        # Adicionar os faltantes que não estavam na estatística no final da fila
+        remaining_missing = [n for n in faltantes if n not in prioridade_faltantes]
+        if remaining_missing:
+            frequentes = get_most_frequent_numbers(df, 25)
+            remaining_sorted = sorted(remaining_missing, key=lambda x: frequentes.index(x) if x in frequentes else 99)
+            prioridade_faltantes.extend(remaining_sorted)
+            
+    # Determinar QUANTOS novos números jogar (Probabilidade)
+    dist_stats = ca.analyze_new_numbers_distribution(df)
+    qtd_novos_sugerida = 0
+    
+    # Passo + 1 pois a distribuição é baseada no sorteio futuro (o que vamos jogar)
+    passo_jogada = proximo_passo 
+    
+    if passo_jogada in dist_stats:
+        df_prob = dist_stats[passo_jogada]
+        if not df_prob.empty:
+            qtd_novos_sugerida = int(df_prob.iloc[0]["Qtd_Novos"])
+            
+    # Fallback ou ajuste
+    if qtd_novos_sugerida == 0:
+        qtd_novos_sugerida = min(len(faltantes), 2)
+        
+    qtd_novos_sugerida = min(qtd_novos_sugerida, len(faltantes))
+    
+    # Selecionar os 'novos'
+    numeros_selecionados = prioridade_faltantes[:qtd_novos_sugerida]
+    
+    # Completar com números JÁ sorteados no ciclo
+    qtd_restante = 15 - len(numeros_selecionados)
+    numeros_no_ciclo = list(set(range(1, 26)) - set(faltantes))
+    quentes = get_hot_numbers(df, last_n=20, top=25)
+    repetidos_ordenados = sorted(numeros_no_ciclo, key=lambda x: quentes.index(x) if x in quentes else 99)
+    
+    numeros_selecionados.extend(repetidos_ordenados[:qtd_restante])
+    
+    return sorted(numeros_selecionados[:15])
+
 
 def generate_suggestions(df, num_games=9):
     """
     Gera sugestões de jogos com diferentes estratégias.
+    Remove duplicatas e agrupa estratégias que geraram o mesmo jogo.
     
     Args:
         df: DataFrame com os concursos e coluna 'ciclo'
@@ -419,7 +587,7 @@ def generate_suggestions(df, num_games=9):
     Returns:
         list: Lista de dicionários com 'estrategia', 'descricao' e 'numeros'
     """
-    sugestoes = [
+    todas_sugestoes = [
         {
             'estrategia': '🔥 Áreas Mais Quentes',
             'descricao': 'Baseado no mapa de calor - números das posições mais frequentes',
@@ -461,10 +629,39 @@ def generate_suggestions(df, num_games=9):
             'numeros': generate_recent_hot(df)
         },
         {
+            'estrategia': '🔄 Ciclo Inteligente (Probabilidade)',
+            'descricao': 'Usa estatística de "quantos novos" virão na próxima rodada',
+            'numeros': generate_smart_cycle_strategy(df)
+        },
+        {
+            'estrategia': '🔮 Ciclo Próxima Rodada (Frequência)',
+            'descricao': 'Prioriza números que historicamente saem nesta rodada específica do ciclo',
+            'numeros': generate_cycle_next_step_strategy(df)
+        },
+        {
             'estrategia': '🧠 Análise Combinada',
             'descricao': 'Algoritmo que pondera múltiplos fatores estatísticos',
             'numeros': generate_combined_analysis(df)
         }
     ]
     
-    return sugestoes[:num_games]
+    # Deduplicação
+    sugestoes_unicas = {}
+    
+    for sug in todas_sugestoes:
+        # Criar chave única baseada nos números ordenados
+        numeros_tuple = tuple(sorted(sug['numeros']))
+        
+        if numeros_tuple in sugestoes_unicas:
+            # Se já existe, adicionar a estratégia à lista (append)
+            sugestoes_unicas[numeros_tuple]['estrategia'] += " + " + sug['estrategia']
+            # Opcional: manter a descrição da primeira ou concatenar
+        else:
+            sugestoes_unicas[numeros_tuple] = sug
+            
+    # Converter de volta para lista
+    lista_final = list(sugestoes_unicas.values())
+    
+    # Limitar quantidade se necessário (mas priorizar unicidade)
+    return lista_final[:num_games]
+

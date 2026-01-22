@@ -31,3 +31,4 @@ Thumbs.db
 *.pyc
 __pycache__/
 data/*.xlsx
+data/D_lotfac.xlsx

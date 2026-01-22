@@ -7,7 +7,9 @@ import source.pip_config as pip
 import source.number_frequency as nf
 import source.game_suggestions as gs
 import source.geographic_analysis as ga
+
 import source.global_statistics as gstats
+import source.cycle_analysis as ca
 import os
 import secrets
 
@@ -64,7 +66,37 @@ def index():
             q2 = sum(1 for n in numeros if n in quadrante2)
             q3 = sum(1 for n in numeros if n in quadrante3)
             q4 = sum(1 for n in numeros if n in quadrante4)
+
             cruz_count = sum(1 for n in numeros if n in cruz)
+            
+            # Análise de Novos vs Repetidos no Ciclo
+            ciclo_atual_row = int(row['ciclo'])
+            concurso_atual_row = int(row['Concurso'])
+            
+            # Pegar todos os sorteios ANTERIORES do MESMO ciclo
+            df_ciclo_ant = df[(df['ciclo'] == ciclo_atual_row) & (df['Concurso'] < concurso_atual_row)]
+            
+            numeros_acumulados_ciclo = set()
+            lst_campos = [f"Bola{i}" for i in range(1, 16)]
+            
+            for _, r_ant in df_ciclo_ant.iterrows():
+                for campo in lst_campos:
+                    if pd.notna(r_ant[campo]):
+                        numeros_acumulados_ciclo.add(int(r_ant[campo]))
+            
+            # Calcular quantos dos números atuais são novos (não estavam nos acumulados)
+            numeros_novos_ciclo = 0
+            numeros_repetidos_ciclo = 0
+            
+            # Se não tem acumulados, todos são novos (primeiro do ciclo)
+            # Mas o problema pede "novos" vs "já saíram".
+            # No primeiro sorteio, todos são "novos" no ciclo.
+            
+            for n in numeros:
+                if n in numeros_acumulados_ciclo:
+                    numeros_repetidos_ciclo += 1
+                else:
+                    numeros_novos_ciclo += 1
 
             # Formatar data corretamente
             data_sorteio = row['Data Sorteio']
@@ -94,7 +126,13 @@ def index():
                 'q2': q2,
                 'q3': q3,
                 'q4': q4,
-                'cruz': cruz_count
+                'q4': q4,
+                'cruz': cruz_count,
+                'q4': q4,
+                'cruz': cruz_count,
+                'novos_ciclo': numeros_novos_ciclo,
+                'repetidos_ciclo': numeros_repetidos_ciclo,
+                'novos_set': list(numeros_acumulados_ciclo.symmetric_difference(set(numeros) | numeros_acumulados_ciclo)) # Números que NÃO estavam nos acumulados (são novos)
             })
 
         
@@ -124,9 +162,40 @@ def index():
         # Calcular estatísticas globais
         consolidated_geo = gstats.calculate_consolidated_geographic_analysis(df)
         global_pip_dist = gstats.calculate_global_pip_distribution(df)
+        global_pip_dist = gstats.calculate_global_pip_distribution(df)
         heat_map = gstats.calculate_heat_map(df)
         
+        # Análise de Ciclos (Novas implementações)
+        # Padrões de saída (ex: 15-5-3-2)
+        df_cycle_patterns = ca.analyze_cycle_exit_patterns(df)
+        cycle_patterns = df_cycle_patterns.head(10).to_dict('records')
+        
+        # Distribuição de Novos Números por Passo do Ciclo
+        dist_novos_stats = ca.analyze_new_numbers_distribution(df)
+        
+        # Converter para formato amigável para o template (lista de objetos)
+        dist_novos_display = []
+        for passo, df_dist in dist_novos_stats.items():
+            dist_novos_display.append({
+                'passo': passo,
+                'dados': df_dist.to_dict('records')
+            })
+            
+        # Ordenar por passo
+        dist_novos_display.sort(key=lambda x: x['passo'])
+        
+        # Análise de Frequência por Rodada do Ciclo
+        freq_by_step = ca.analyze_frequency_by_cycle_step(df, max_steps=4)
+        freq_by_step_display = []
+        for step, df_freq in freq_by_step.items():
+            freq_by_step_display.append({
+                'step': step,
+                'dados': df_freq.head(10).to_dict('records') # Top 10 por rodada
+            })
+        freq_by_step_display.sort(key=lambda x: x['step'])
+        
         # Gerar sugestões de jogos
+
         sugestoes = gs.generate_suggestions(df, num_games=9)
         
         # Adicionar análise completa para cada sugestão
@@ -171,10 +240,14 @@ def index():
             total_concursos=total_concursos,
             ciclo_atual=ciclo_atual,
             sugestoes=sugestoes,
+
             limit=limit,
             consolidated_geo=consolidated_geo,
             global_pip_dist=global_pip_dist,
-            heat_map=heat_map
+            heat_map=heat_map,
+            cycle_patterns=cycle_patterns,
+            dist_novos_display=dist_novos_display,
+            freq_by_step_display=freq_by_step_display
         )
     
     except Exception as e:

@@ -66,7 +66,8 @@
                     <div class="concurso-cartela">
                         <div class="cartela-grid">
                             {% for i in range(1, 26) %}
-                            <div class="cartela-cell {% if i in concurso.numeros %}selected{% endif %}">
+                            <div class="cartela-cell {% if i in concurso.numeros %}selected{% endif %} {% if i in concurso.novos_set %}is-new-in-cycle{% endif %}"
+                                title="{% if i in concurso.novos_set %}Novo no Ciclo{% endif %}">
                                 {{ i }}
                             </div>
                             {% endfor %}
@@ -85,6 +86,14 @@
                         <div class="stat-row">
                             <span class="stat-label">🔄 Ciclo:</span>
                             <span class="stat-value ciclo-badge">{{ concurso.ciclo }}</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">✨ Novos/Rep:</span>
+                            <span class="stat-value"
+                                title="{{ concurso.novos_ciclo }} novos no ciclo, {{ concurso.repetidos_ciclo }} repetidos">
+                                <span style="color: #10b981;">{{ concurso.novos_ciclo }}</span> /
+                                <span style="color: #6b7280;">{{ concurso.repetidos_ciclo }}</span>
+                            </span>
                         </div>
                         <div class="stat-row">
                             <span class="stat-label">⚖️ P-I-NP:</span>
@@ -143,7 +152,7 @@
                                     <th>Nº</th>
                                     <th>Freq.</th>
                                     <th>%</th>
-                                    <th>Ciclo</th>
+                                    <th>No Ciclo?</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -156,9 +165,9 @@
                                     <td class="percent-col">{{ num_info.percentual }}%</td>
                                     <td class="status-col">
                                         {% if num_info.no_ciclo %}
-                                        <span class="status-badge status-sim">✓</span>
+                                        <span class="status-badge status-sim">Sim</span>
                                         {% else %}
-                                        <span class="status-badge status-nao">✗</span>
+                                        <span class="status-badge status-nao">Não</span>
                                         {% endif %}
                                     </td>
                                 </tr>
@@ -273,8 +282,34 @@
                     </div>
                 </div>
 
-                <!-- Análise P-I-NP -->
+                <!-- Análise de Ciclos -->
                 <div class="analysis-card">
+                    <h3>🔄 Análise de Ciclos</h3>
+
+                    <!-- Padrões de Saída -->
+                    <h4 class="subsection-title">Padrões de Saída Mais Comuns</h4>
+                    <p class="chart-desc">Ordem em que os números fecham o ciclo (ex: 15-5-3-2 significa 15 no 1º, 5 no
+                        2º, etc)</p>
+                    <div class="table-wrapper">
+                        <table class="stats-table">
+                            <thead>
+                                <tr>
+                                    <th>Padrão</th>
+                                    <th>Frequência</th>
+                                    <th>%</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for pattern in cycle_patterns %}
+                                <tr>
+                                    <td class="pattern-cell">{{ pattern.Padrao }}</td>
+                                    <td>{{ pattern.Frequencia }}</td>
+                                    <td>{{ "%.2f"|format(pattern.Percentual) }}%</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                     <h3>⚖️ Pares-Ímpares-Primos</h3>
                     <div class="table-wrapper">
                         <table class="stats-table">
@@ -297,6 +332,72 @@
                         </table>
                     </div>
                 </div>
+
+                <!-- Análise P-I-NP -->
+                <div class="analysis-card">
+                    <!-- Distribuição de Novos Números -->
+                    <h4 class="subsection-title">Novos Números por Sorteio do Ciclo</h4>
+                    <p class="chart-desc">Probabilidade de quantos números novos virão no próximo sorteio</p>
+
+                    <div class="cycle-steps-container">
+                        {% for step in dist_novos_display %}
+                        <div class="step-card">
+                            <h5 class="step-title">{{ step.passo }}º Sorteio do Ciclo</h5>
+                            <div class="mini-table-wrapper">
+                                <table class="mini-stats-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Novos</th>
+                                            <th>%</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for row in step.dados[:5] %}
+                                        <tr>
+                                            <td><strong>{{ row.Qtd_Novos }}</strong></td>
+                                            <td>{{ "%.1f"|format(row.Percentual) }}%</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Análise de Frequência por Rodada -->
+                <div class="analysis-card full-width-card">
+                    <h3>📊 Frequência por Rodada do Ciclo</h3>
+                    <p class="chart-desc">Números que mais saem na 1ª, 2ª, 3ª e 4ª rodada do ciclo</p>
+
+                    <div class="freq-steps-container">
+                        {% for step_data in freq_by_step_display %}
+                        <div class="step-column">
+                            <h4 class="step-header">{{ step_data.step }}ª Rodada</h4>
+                            <div class="table-wrapper">
+                                <table class="mini-stats-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Nº</th>
+                                            <th>Freq.</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for row in step_data.dados %}
+                                        <tr>
+                                            <td class="number-cell-bold">{{ row.Numero }}</td>
+                                            <td>{{ "%.1f"|format(row.Percentual) }}%</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
             </div>
         </div>
 

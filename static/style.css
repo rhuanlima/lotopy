@@ -1175,3 +1175,131 @@ footer {
         border-radius: 4px;
     }
 }
+
+/* Highlight para novos números no ciclo */
+.cartela-cell.is-new-in-cycle {
+    position: relative;
+    border-color: #10b981;
+    /* Verde esmeralda */
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+}
+
+.cartela-cell.is-new-in-cycle::after {
+    content: '';
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    width: 8px;
+    height: 8px;
+    background-color: #10b981;
+    border-radius: 50%;
+    border: 1px solid white;
+}
+
+/* Ajuste para células selecionadas que também são novas */
+.cartela-cell.selected.is-new-in-cycle {
+    background: linear-gradient(135deg, #f59e0b 0%, #10b981 100%);
+    /* Gradiente fundindo laranja (selecionado) com verde (novo) */
+    border-color: #10b981;
+}
+
+/* Análise de Frequência por Rodada */
+.freq-steps-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.step-column {
+    background: white;
+    border-radius: 10px;
+    padding: 10px;
+    border: 1px solid #e5e7eb;
+}
+
+.step-header {
+    text-align: center;
+    color: #667eea;
+    font-size: 0.95rem;
+    margin-bottom: 10px;
+    border-bottom: 2px solid #f3f4f6;
+    padding-bottom: 5px;
+}
+
+.full-width-card {
+    grid-column: 1 / -1;
+    /* Ocupa toda a largura no grid de análise */
+}
+
+.number-cell-bold {
+    font-weight: 700;
+    font-size: 1rem;
+    color: #4b5563;
+}
+
+/* Análise de Ciclos */
+.pattern-cell {
+    font-family: 'Courier New', monospace;
+    font-weight: 700;
+    color: #8b5cf6;
+}
+
+.cycle-steps-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.step-card {
+    background: white;
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    flex: 1;
+    min-width: 150px;
+    border: 1px solid #e5e7eb;
+}
+
+.step-title {
+    color: #4b5563;
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+    font-weight: 700;
+    text-align: center;
+    border-bottom: 2px solid #f3f4f6;
+    padding-bottom: 5px;
+}
+
+.mini-table-wrapper {
+    overflow-x: auto;
+}
+
+.mini-stats-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.mini-stats-table th {
+    font-size: 0.75rem;
+    color: #6b7280;
+    padding: 4px;
+    text-align: center;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.mini-stats-table td {
+    font-size: 0.85rem;
+    color: #1f2937;
+    padding: 4px;
+    text-align: center;
+}
+
+.chart-desc {
+    font-size: 0.85rem;
+    color: #6b7280;
+    margin-top: -5px;
+    margin-bottom: 15px;
+    font-style: italic;
+}
